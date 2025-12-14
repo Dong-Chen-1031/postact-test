@@ -317,6 +317,10 @@ class HTMLParser {
           break;
         } else {
           // new tag! niche!
+          const trimmed = text.trimStart();
+          if (trimmed) children.push(trimmed);
+          text = "";
+
           children.push([this.processConsumption()]);
           continue;
         }
