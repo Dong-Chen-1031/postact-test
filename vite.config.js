@@ -21,3 +21,6 @@ export default defineConfig({
     coverage: { provider: "v8" },
   },
 });
+
+// fyi i used ai here because idk how to deal with ts
+// fuck it

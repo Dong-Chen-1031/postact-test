@@ -28,6 +28,17 @@ type _DollarSign = Record<
   keyof HTMLElementTagNameMap,
   (child: string | HTMLElement) => HTMLElement
 >;
+
+/**
+ * Dollar sign (`$`) serves as a simple element creation tool for debugging.
+ *
+ * @example
+ * ```ts
+ * $.div(
+ *   $.p("Hello, world!")
+ * )
+ * ```
+ */
 export const $: _DollarSign = new Proxy(
   {},
   {

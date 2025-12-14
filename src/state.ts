@@ -10,6 +10,9 @@ export type Subscriber<T> = (value: T) => any;
 export type Checker<T> = (current: T, other: T) => boolean;
 
 export interface State<T> {
+  /**
+   * postact internals
+   */
   readonly __postactItem: `state`;
 
   /**
@@ -53,13 +56,13 @@ export interface State<T> {
    * postact will update the state; if `false` is returned, postact won't run other checks and abort, leaving
    * the state as-is.
    */
-  readonly withChecker: (checker: Checker<T>) => void;
+  readonly withChecker: (checker: Checker<T>) => State<T>;
 
   /**
    * Adds multiple checkers. See `withChecker`.
    * @param checkers An array of checker functions.
    */
-  readonly withCheckers: (checkers: Checker<T>[]) => void;
+  readonly withCheckers: (checkers: Checker<T>[]) => State<T>;
 }
 
 export class BaseStateManager<T> implements State<T> {
@@ -98,19 +101,27 @@ export class BaseStateManager<T> implements State<T> {
     this.#subscribers.forEach((subscriber) => subscriber(value));
   }
 
-  withChecker(checker: Checker<T>): void {
+  withChecker(checker: Checker<T>): State<T> {
     this.#checkers.push(checker);
+    return this;
   }
 
-  withCheckers(checkers: Checker<T>[]): void {
+  withCheckers(checkers: Checker<T>[]): State<T> {
     this.#checkers.push(...checkers);
+    return this;
   }
 }
 
+/**
+ * Create a new state, managed by postact.
+ * @param initial The initial value. Required.
+ *
+ * @example
+ * ```ts
+ * const $count = state<number>(0);
+ * $count.update(v => v + 1);
+ * ```
+ */
 export function state<T, Q = Exclude<T, Function>>(initial: Q): State<Q> {
   return new BaseStateManager(initial);
-}
-
-export function equalityChecker<T>(current: T, other: T): boolean {
-  return current === other;
 }
