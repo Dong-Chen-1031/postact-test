@@ -8,3 +8,4 @@ export {
 } from "./state";
 export { html } from "./html";
 export { later } from "./later";
+export { route } from "./routes";

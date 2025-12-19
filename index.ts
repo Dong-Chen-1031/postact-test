@@ -1,4 +1,8 @@
-import { state, html, select, later } from "./src";
+import { html, route, select } from "./src";
 
-const vdom = html`<div data-src="hello \\""></div>`;
-console.log(vdom);
+route("/", () => {
+  select("#app").render(
+    html`<h1>hey</h1>
+      ${"hello"}`,
+  );
+});
