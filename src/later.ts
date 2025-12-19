@@ -6,6 +6,7 @@ export class Later<T> extends BaseStateManager<T> {
 
   /**
    * Whether the promise has been fulfilled.
+   * **Always check `ok` before using `.value`.**
    */
   ok: boolean;
 

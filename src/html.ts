@@ -251,13 +251,11 @@ class HTMLParser {
           if (!name) throw ParseError.expectedAttrName();
           // we can now go collect the value
           state = 1;
-          console.log("state 1");
         } else {
           if (shouldInsert) throw ParseError.noInsertInAttrNames();
           if (!/[a-zA-Z0-9-]/.test(chr))
             throw ParseError.invalidCharacterInAttributeName(chr);
           name += chr;
-          console.log(name);
           continue;
         }
       }

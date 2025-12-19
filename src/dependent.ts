@@ -29,10 +29,27 @@ export class Dependent<T, R> implements Subscribable<R> {
 }
 
 interface DependentEntry {
+  /**
+   * Creates a subscribable `DependentLater` object that runs an asynchronous `gen` whenever the `state` updates.
+   * @param state The state to depend upon.
+   * @param gen An asynchronous function taking a state, then returns a value.
+   *
+   * @example
+   * ```ts
+   * const $count = state<number>(0);
+   * const $calculated = dependent.later<string>($count, async (count) => {
+   *   return (count * 67).toString() // performs some computation
+   * })
+   *
+   * if ($calculated.ok) {
+   *   console.log($calculated.value);
+   * }
+   * ```
+   */
   later: <R, T>(
     state: State<T>,
     gen: (value: T) => Promise<R>,
-  ) => Dependent<T, R>;
+  ) => DependentLater<T, R>;
 }
 
 /**
@@ -55,11 +72,59 @@ function _dependent<R, T>(
   return new Dependent(state, gen);
 }
 
+export class DependentLater<T, R> implements Subscribable<R> {
+  public __postactItem: "dependent" = "dependent";
+
+  #gen: (value: T) => Promise<R>;
+  #value: R | null;
+  #subscribers: Subscriber<R>[];
+  #waiting: boolean;
+
+  constructor(state: State<T>, gen: (value: T) => Promise<R>) {
+    this.#value = null;
+    this.#waiting = true;
+    gen(state.value).then((value) => {
+      this.#value = value;
+      this.#waiting = false;
+    });
+
+    this.#gen = gen;
+    this.#subscribers = [];
+
+    state.subscribe((current) => {
+      this.#value = null;
+      this.#waiting = true;
+      this.#gen(current).then((value) => {
+        this.#value = value;
+        this.#waiting = false;
+        this.#subscribers.forEach((subscriber) => subscriber(value));
+      });
+    });
+  }
+
+  /**
+   * Checks whether or not the promise has been fulfilled.
+   * **Always check `ok` before using `.value`.**
+   */
+  get ok(): boolean {
+    return !this.#waiting;
+  }
+
+  get value(): R {
+    // @ts-ignore lol
+    return this.#value;
+  }
+
+  subscribe(subscriber: Subscriber<R>): void {
+    this.#subscribers.push(subscriber);
+  }
+}
+
 _dependent.later = function <R, T>(
   state: State<T>,
   gen: (value: T) => Promise<R>,
-): Dependent<T, R> {
-  // later ill write this lmfao
+): DependentLater<T, R> {
+  return new DependentLater(state, gen);
 };
 
 export const dependent = _dependent as unknown as
