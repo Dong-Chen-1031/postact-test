@@ -1,5 +1,6 @@
 import type { VirtualElement, VirtualItem } from "./vdom/structure";
-import type { Subscribable } from "./state";
+import type { Subscribable } from "./subscribable";
+import { unescape } from "./utilities";
 
 type Argument =
   | null
@@ -357,7 +358,7 @@ class HTMLParser {
         } else {
           // new tag! niche!
           const trimmed = text.trimStart();
-          if (trimmed) children.push(trimmed);
+          if (trimmed) children.push(unescape(trimmed));
           text = "";
 
           children.push([this.processConsumption()]);
@@ -369,7 +370,7 @@ class HTMLParser {
 
       if (shouldInsert) {
         const trimmed = text.trimStart();
-        if (trimmed) children.push(trimmed);
+        if (trimmed) children.push(unescape(trimmed));
         text = "";
 
         const insertion = this.getInsertion();
@@ -378,7 +379,7 @@ class HTMLParser {
     }
 
     const trimmed = text.trimStart();
-    if (trimmed) children.push(trimmed);
+    if (trimmed) children.push(unescape(trimmed));
     return children;
   }
 }
@@ -457,6 +458,22 @@ function filterListenersFromAttributes<
   return [callbacks, attrs as N];
 }
 
+/**
+ * Create HTML. Use this with template-string-based calls.
+ * Accepts insertions such as states, primitives, virtual DOM, and callback functions.
+ *
+ * Be sure to escape unsafe HTML, see below.
+ *
+ * **HTML Escape Map**
+ * - `&` → `&amp;`
+ * - `<` → `&lt;`
+ * - `>` → `&gt;`
+ * - `"` → `&quot;`
+ * - `'` → `&#39;`
+ *
+ * @param tsa Template strings.
+ * @param values Values (arguments).
+ */
 export function html(
   tsa: TemplateStringsArray,
   ...values: Argument[]

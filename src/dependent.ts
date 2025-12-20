@@ -1,4 +1,5 @@
-import type { State, Subscribable, Subscriber } from "./state";
+import type { Subscribable, Subscriber } from "./subscribable";
+import type { State } from "./state";
 
 export class Dependent<T, R> implements Subscribable<R> {
   public __postactItem: "dependent" = "dependent";

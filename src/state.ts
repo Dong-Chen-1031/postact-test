@@ -1,26 +1,11 @@
+import type { Subscribable, Subscriber } from "./subscribable";
+
 export type UpdateDispatch<T> = (current: T) => T;
 export type Updater<T> = UpdateDispatch<T> | T;
 
 function getUpdaterValue<T>(current: T, upd: Updater<T>): T {
   // @ts-ignore
   return typeof upd === "function" ? upd(current) : upd;
-}
-
-export type Subscriber<T> = (value: T) => any;
-
-export interface Subscribable<T> {
-  /**
-   * Current state value.
-   * You may replace it using the `=` (assign) operator, as it's not read-only, yet
-   * no subscribers will be notified nor will checks be made, which is the same behavior `set()` does.
-   */
-  value: T;
-
-  /**
-   * Subscribe to state value changes.
-   * @param subscriber The subscriber, taking the current state value as the parameter.
-   */
-  readonly subscribe: (subscriber: Subscriber<T>) => void;
 }
 
 export type Checker<T> = (current: T, other: T) => boolean;

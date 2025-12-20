@@ -146,7 +146,7 @@ This becomes:
 ## Future plans
 In the future. Maybe. Okay yeah I will.
 
-- [ ] `route()` full context interface
+- [x] `route()` full context interface
 - [ ] Virtual fragment (w/ `subscribables` field) support
 - [ ] Insertions after regular tags
 - [ ] Component-like insertions `<${...}>`

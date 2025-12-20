@@ -21,7 +21,7 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
     const tn = window.document.createTextNode(vtn.data);
 
     if (vtn.subscribable)
-      vtn.subscribable.subscribe((value) => (tn.textContent = value));
+      vtn.subscribable.subscribe((value: any) => (tn.textContent = value));
 
     fragment.appendChild(tn);
     return fragment;
@@ -43,7 +43,7 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
 
     // subscribables
     if (item.subscribable)
-      item.subscribable.subscribe((value) => {
+      item.subscribable.subscribe((value: any) => {
         if (["string", "number", "bigint", "boolean"].includes(typeof value)) {
           // then we'll keep it simple
           element.textContent = value.toString();
