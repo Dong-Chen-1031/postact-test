@@ -9,30 +9,7 @@
   "repository": {
     "url": "https://github.com/AWeirdDev/postact"
   },
-  "license": "MIT",
   "module": "index.ts",
-  "moduleResolution": "Bundler",
-  "declaration": true,
-  "declarationMap": true,
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
-    }
-  },
-  "files": [
-    "src/**/*",
-    "dist/*"
-  ],
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && rolldown -m -c",
-    "docs:init": "docmd init",
-    "docs:dev": "docmd dev",
-    "docs:build": "docmd build"
-  },
-  "dependencies": {},
   "devDependencies": {
     "@mgks/docmd": "^0.3.2",
     "@testing-library/dom": "^10.4.1",
@@ -46,7 +23,29 @@
   "peerDependencies": {
     "typescript": "^5"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "declaration": true,
+  "declarationMap": true,
+  "files": [
+    "src/**/*",
+    "dist/*"
+  ],
+  "license": "MIT",
+  "moduleResolution": "Bundler",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && rolldown -m -c",
+    "docs:init": "docmd init",
+    "docs:dev": "docmd dev",
+    "docs:build": "docmd build"
+  },
   "trustedDependencies": [
     "@mgks/docmd"
-  ]
+  ],
+  "types": "./dist/index.d.ts"
 }
