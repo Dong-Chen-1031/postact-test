@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && rolldown -c",
+    "build": "tsc && rolldown -m -c",
     "docs:init": "docmd init",
     "docs:dev": "docmd dev",
     "docs:build": "docmd build"
