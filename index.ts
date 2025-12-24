@@ -1,16 +1,17 @@
-import { select, html, type VirtualItem, state, dependent } from "./src";
+import { html, select, state, type VirtualItem } from "./src";
 
 function createApp(): VirtualItem {
   const $count = state(0);
-  const $element = dependent($count, (count) => {
-    return count > 4 ? "hello" : null;
+  const $text = state("Hello");
+
+  $count.subscribe(function su(change) {
+    if ($count.value > 2) $count.unsubscribe(su);
+    $text.update(change.toString());
   });
 
   return html`<div>
-    <button onclick=${() => $count.update((v) => v + 1)}>
-      <h1>${$count}</h1>
-    </button>
-    <div id="display">${$element}</div>
+    <button onclick=${() => $count.update((v) => v + 1)}>${$count}</button>
+    <div>${$text}</div>
   </div>`;
 }
 

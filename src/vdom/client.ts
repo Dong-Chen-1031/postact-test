@@ -1,5 +1,4 @@
 import type {
-  VirtualElement,
   VirtualFragment,
   VirtualItem,
   VirtualTextNode,
