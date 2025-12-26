@@ -1,5 +1,4 @@
 import type {
-  VirtualElement,
   VirtualFragment,
   VirtualItem,
   VirtualTextNode,
@@ -88,13 +87,14 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
         fragment.textContent = "";
       } else {
         const newFrag = (value as VirtualFragment).children.reduce((f, vi) => {
-          f.append(_toFrag(transformArgToVirtualItem(vi)));
+          f.appendChild(_toFrag(transformArgToVirtualItem(vi)));
           return f;
         }, window.document.createDocumentFragment());
-        fragment.parentElement?.replaceChildren(newFrag);
+        fragment.parentElement?.appendChild(newFrag);
       }
     });
 
+  // [PROBLEM]
   fragment.append(...(vi as VirtualFragment).children.map((vi) => _toFrag(vi)));
   return fragment;
 }

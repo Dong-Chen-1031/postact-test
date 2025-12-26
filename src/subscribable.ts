@@ -11,9 +11,32 @@ export interface Subscribable<T> {
   /**
    * Subscribe to state value changes.
    * @param subscriber The subscriber, taking the current state value as the parameter.
+   *
+   * @example
+   * ```ts
+   * const $count = state(0);
+   *
+   * $count.subscribe((count) => {
+   *   console.log("count is now", count);
+   * });
+   * ```
    */
   readonly subscribe: (subscriber: Subscriber<T>) => void;
 
+  /**
+   * Unsubscribe from state value changes.
+   * @param pointer The function.
+   * @example
+   * ```ts
+   * const $count = state(0);
+   *
+   * $count.subscribe(function foo() {
+   *   console.log("count is now", count);
+   * });
+   *
+   * $count.unsubscribe(foo);
+   * ```
+   */
   readonly unsubscribe: (pointer: Subscriber<T>) => void;
 }
 
