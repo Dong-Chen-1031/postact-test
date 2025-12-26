@@ -3,7 +3,7 @@ import { select, html, type VirtualItem, state, dependent } from "./src";
 function createApp(): VirtualItem {
   const $count = state(0);
   const $element = dependent($count, (count) => {
-    return count > 4 ? "hello" : null;
+    return count < 4 ? html`<h1>${"count < 4"}</h1>` : html`<h1>${"count >= 4"}</h1>`;
   });
 
   return html`<div>
@@ -15,3 +15,4 @@ function createApp(): VirtualItem {
 }
 
 select("#app").render(createApp());
+html`<h1 onclick='alert(123)'></h1>`
