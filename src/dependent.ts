@@ -1,8 +1,10 @@
 import type { Subscribable, Subscriber } from "./subscribable";
 import type { State } from "./state";
 
+import { isPostact, PostactIdentifier } from "./_internals";
+
 export class Dependent<T, R> implements Subscribable<R> {
-  public __postactItem: "dependent" = "dependent";
+  public __p: PostactIdentifier.Dependent = PostactIdentifier.Dependent;
 
   #gen: (value: T) => R;
   #value: R;
@@ -78,7 +80,7 @@ function _dependent<R, T>(
 }
 
 export class DependentLater<T, R> implements Subscribable<R> {
-  public __postactItem: "dependent" = "dependent";
+  public __p: PostactIdentifier.Dependent = PostactIdentifier.Dependent;
 
   #gen: (value: T) => Promise<R>;
   #value: R | null;
@@ -88,6 +90,7 @@ export class DependentLater<T, R> implements Subscribable<R> {
   constructor(state: State<T>, gen: (value: T) => Promise<R>) {
     this.#value = null;
     this.#waiting = true;
+
     gen(state.value).then((value) => {
       this.#value = value;
       this.#waiting = false;
@@ -138,3 +141,7 @@ _dependent.later = function <R, T>(
 
 export const dependent = _dependent as DependentEntry &
   (<R, T>(state: State<T>, gen: (value: T) => R) => Dependent<T, R>);
+
+export function isDependent(item: any): item is Dependent<any, any> {
+  return isPostact(PostactIdentifier.Dependent, item);
+}

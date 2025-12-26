@@ -1,15 +1,16 @@
-import type {
-  VirtualFragment,
-  VirtualItem,
-  VirtualTextNode,
+import {
+  isVe,
+  isVf,
+  isVtn,
+  type VirtualFragment,
+  type VirtualItem,
+  type VirtualTextNode,
 } from "./structure";
 
-import { ensureWindow } from "../utilities";
+import { ensureWindow, isPrimitive } from "../utilities";
 import { transformArgToVirtualItem } from "../html";
 
-function isPrimitive(value: any): boolean {
-  return ["string", "number", "bigint", "boolean"].includes(typeof value);
-}
+import { PostactIdentifier } from "../_internals";
 
 function _toFrag(vi: VirtualItem): DocumentFragment {
   const fragment = window.document.createDocumentFragment();
@@ -21,82 +22,48 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
   }
 
   // a text node
-  if (Object.hasOwn(vi, "__postactItem")) {
-    if (vi["__postactItem"] == "virtual-text-node") {
-      // VirtualTextNode
-      const vtn = vi as VirtualTextNode;
-      const tn = window.document.createTextNode(vtn.data);
 
-      if (vtn.subscribable)
-        vtn.subscribable.subscribe((value) => {
-          if (isPrimitive(value)) {
-            // then we'll keep it simple
-            tn.textContent = value.toString();
-          } else if (value === null) {
-            tn.textContent = "";
-          } else {
-            const frag = _toFrag(transformArgToVirtualItem(value));
-            tn.parentElement?.replaceChild(frag, tn);
-          }
-        });
-
-      fragment.appendChild(tn);
-      return fragment;
-    } else if (vi["__postactItem"] == "virtual-element") {
-      // VirtualElement
-      const element = window.document.createElement(vi.tag);
-
-      // attributes
-      Object.entries(vi.attributes).forEach(([name, value]) =>
-        element.setAttribute(name, value),
-      );
-
-      // listeners
-      vi.listeners.forEach(([name, listener]) =>
-        element.addEventListener(name, listener),
-      );
-
-      // subscribables
-      if (vi.subscribable)
-        vi.subscribable.subscribe(function sub(value: any) {
-          if (isPrimitive(value)) {
-            // then we'll keep it simple
-            element.textContent = value.toString();
-          } else if (value === null) {
-            element.textContent = "";
-          } else {
-            // vi.subscribable!.unsubscribe(sub);
-            element.replaceChildren(_toFrag(transformArgToVirtualItem(value)));
-          }
-        });
-
-      // inner children
-      element.append(...vi.children.map((child) => _toFrag(child)));
-
-      fragment.appendChild(element);
-      return fragment;
-    }
+  if (isVtn(vi)) {
+    // VirtualTextNode
+    const vtn = vi as VirtualTextNode;
+    const tn = window.document.createTextNode(vtn.data);
+    fragment.appendChild(tn);
+    return fragment;
   }
 
-  // we're left with VirtualFragment
-  if (vi.subscribable)
-    vi.subscribable.subscribe(function sub(value: any) {
-      if (isPrimitive(value)) {
-        fragment.textContent = value.toString();
-      } else if (value === null) {
-        fragment.textContent = "";
-      } else {
-        const newFrag = (value as VirtualFragment).children.reduce((f, vi) => {
-          f.appendChild(_toFrag(transformArgToVirtualItem(vi)));
-          return f;
-        }, window.document.createDocumentFragment());
-        fragment.parentElement?.appendChild(newFrag);
-      }
-    });
+  if (isVe(vi)) {
+    // VirtualElement
+    const element = window.document.createElement(vi.tag);
 
-  // [PROBLEM]
-  fragment.append(...(vi as VirtualFragment).children.map((vi) => _toFrag(vi)));
-  return fragment;
+    // attributes
+    Object.entries(vi.attributes).forEach(([name, value]) =>
+      element.setAttribute(name, value),
+    );
+
+    // listeners
+    vi.listeners.forEach(([name, listener]) =>
+      element.addEventListener(name, listener),
+    );
+
+    // inner children
+    element.append(...vi.children.map((child) => _toFrag(child)));
+
+    fragment.appendChild(element);
+    return fragment;
+  }
+
+  if (isVf(vi)) {
+    // we're left with VirtualFragment
+
+    fragment.append(
+      ...(vi as VirtualFragment).children.map((vi) => {
+        return _toFrag(vi);
+      }),
+    );
+    return fragment;
+  } else {
+    throw new Error("unknown virtual item", vi);
+  }
 }
 
 /**

@@ -1,3 +1,4 @@
+import { isPostact, PostactIdentifier } from "./_internals";
 import type { Subscribable, Subscriber } from "./subscribable";
 
 export type UpdateDispatch<T> = (current: T) => T;
@@ -11,10 +12,7 @@ function getUpdaterValue<T>(current: T, upd: Updater<T>): T {
 export type Checker<T> = (current: T, other: T) => boolean;
 
 export interface State<T> extends Subscribable<T> {
-  /**
-   * postact internals
-   */
-  readonly __postactItem: `state`;
+  readonly __p: PostactIdentifier.State;
 
   /**
    * Update the state value and notifies all subscribers of the change.
@@ -55,7 +53,7 @@ export interface State<T> extends Subscribable<T> {
 
 export class BaseStateManager<T> implements State<T> {
   public value: T;
-  public readonly __postactItem: "state" = "state";
+  public readonly __p = PostactIdentifier.State;
 
   #subscribers: Map<Subscriber<T>, Subscriber<T>>;
   #checkers: Checker<T>[];
@@ -117,4 +115,8 @@ export class BaseStateManager<T> implements State<T> {
  */
 export function state<T, Q = Exclude<T, Function>>(initial: Q): State<Q> {
   return new BaseStateManager(initial);
+}
+
+export function isState(item: any): item is State<any> {
+  return isPostact(PostactIdentifier.State, item);
 }

@@ -1,12 +1,22 @@
-import type { VirtualElement, VirtualItem } from "./vdom/structure";
+import {
+  createVf,
+  createVtn,
+  isVf,
+  type VirtualElement,
+  type VirtualItem,
+} from "./vdom/structure";
 import type { Subscribable } from "./subscribable";
-import { unescape } from "./utilities";
+import { isPrimitive, unescape } from "./utilities";
+import { PostactIdentifier } from "./_internals";
+import { isState } from "./state";
+import { isDependent } from "./dependent";
 
 type Argument =
   | null
   | undefined
   | boolean
   | number
+  | bigint
   | string
   | Subscribable<any>
   | VirtualItem
@@ -24,13 +34,11 @@ function identifyArgument(arg: Argument): ArgumentType {
   if (arg === null || typeof arg === "undefined") return ArgumentType.Empty;
   if (typeof arg === "function") return ArgumentType.Function;
 
-  // @ts-ignore javascript is gonna spare us with `undefined` anyway lmfao
-  if (arg["__postactItem"] === "state" || arg["__postactItem"] == "dependent") {
+  if (isPrimitive(arg)) return ArgumentType.Text;
+
+  if (isState(arg) || isDependent(arg)) {
     return ArgumentType.Subscribable;
   }
-
-  if (["number", "boolean", "string"].includes(typeof arg))
-    return ArgumentType.Text;
 
   return ArgumentType.VirtualItem;
 }
@@ -159,7 +167,7 @@ class HTMLParser {
 
     // create a fragment
     return {
-      __postactItem: "virtual-fragment",
+      __p: PostactIdentifier.VirtualFragment,
       children,
     };
   }
@@ -172,7 +180,7 @@ class HTMLParser {
 
     if (selfClosing) {
       return {
-        __postactItem: "virtual-element",
+        __p: PostactIdentifier.VirtualElement,
         tag: startTag,
         attributes: attrs,
         children: [],
@@ -186,7 +194,7 @@ class HTMLParser {
     if (startTag !== endTag) throw ParseError.tagMismatch(startTag, endTag);
 
     return {
-      __postactItem: "virtual-element",
+      __p: PostactIdentifier.VirtualElement,
       tag: startTag,
       attributes: attrs,
       children,
@@ -195,7 +203,6 @@ class HTMLParser {
   }
 
   /**
-   *
    * @returns `[(tag name), (attributes), (self-closing?), (shouldInsert?)]`
    */
   consumeTag(): [string, Record<string, string | Function>, boolean, boolean] {
@@ -367,7 +374,7 @@ class HTMLParser {
         } else {
           // new tag! niche!
           const trimmed = text.trimStart();
-          if (trimmed) children.push(unescape(trimmed));
+          if (trimmed) children.push(createVtn(unescape(trimmed)));
           text = "";
 
           children.push(this.processConsumption());
@@ -379,7 +386,7 @@ class HTMLParser {
 
       if (shouldInsert) {
         const trimmed = text.trimStart();
-        if (trimmed) children.push(unescape(trimmed));
+        if (trimmed) children.push(createVtn(unescape(trimmed)));
         text = "";
 
         const insertion = this.getInsertion();
@@ -388,7 +395,7 @@ class HTMLParser {
     }
 
     const trimmed = text.trimStart();
-    if (trimmed) children.push(unescape(trimmed));
+    if (trimmed) children.push(createVtn(unescape(trimmed)));
     return children;
   }
 }
@@ -399,7 +406,7 @@ export function transformArgToVirtualItem(insertion: Argument): VirtualItem {
       return null;
 
     case ArgumentType.Text:
-      return insertion!.toString();
+      return createVtn(insertion!.toString());
 
     case ArgumentType.Subscribable:
       // we'll put the initial value
@@ -407,26 +414,13 @@ export function transformArgToVirtualItem(insertion: Argument): VirtualItem {
       const value = state.value;
 
       if (typeof value !== "undefined" && value !== null) {
-        if (["string", "number", "bigint", "boolean"].includes(typeof value)) {
-          return {
-            __postactItem: "virtual-text-node",
-            data: value.toString(),
-            subscribable: state,
-          };
+        if (isPrimitive(value)) {
+          return createVtn(value.toString(), state);
         } else {
-          // quite possibly some kind of element
-          return {
-            __postactItem: "virtual-fragment",
-            children: [value],
-            subscribable: state,
-          };
+          return createVf([value], state);
         }
       } else {
-        return {
-          __postactItem: "virtual-text-node",
-          data: "",
-          subscribable: state,
-        };
+        return createVtn("", state);
       }
 
     case ArgumentType.VirtualItem:

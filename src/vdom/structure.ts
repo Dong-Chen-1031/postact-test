@@ -1,11 +1,12 @@
+import { isPostact, PostactIdentifier } from "../_internals";
 import type { Subscribable } from "../subscribable";
 
 export interface VirtualElement {
-  readonly __postactItem: `virtual-element`;
+  readonly __p: PostactIdentifier.VirtualElement;
 
   tag: string;
-  attributes: Record<string, string>;
   children: VirtualItem[];
+  attributes: Record<string, string>;
   listeners: [
     keyof HTMLElementEventMap,
     (event: HTMLElementEventMap[keyof HTMLElementEventMap]) => void,
@@ -13,24 +14,62 @@ export interface VirtualElement {
   subscribable?: Subscribable<any>;
 }
 
+export function isVe(item: any): item is VirtualElement {
+  return isPostact(PostactIdentifier.VirtualElement, item);
+}
+
 // abstraction only
 export interface VirtualFragment {
-  readonly __postactItem: `virtual-fragment`;
+  readonly __p: PostactIdentifier.VirtualFragment;
   children: VirtualItem[];
   subscribable?: Subscribable<any>;
 }
 
+export function isVf(item: any): item is VirtualFragment {
+  return isPostact(PostactIdentifier.VirtualFragment, item);
+}
+
+/**
+ * (helper) Create a virtual fragment.
+ */
+export function createVf(
+  children: VirtualItem[],
+  subscribable?: Subscribable<any>,
+): VirtualFragment {
+  return {
+    __p: PostactIdentifier.VirtualFragment,
+    children,
+    subscribable,
+  };
+}
+
 export interface VirtualTextNode {
-  readonly __postactItem: `virtual-text-node`;
+  readonly __p: PostactIdentifier.VirtualTextNode;
 
   data: string;
   subscribable?: Subscribable<any>;
 }
 
+export function isVtn(item: any): item is VirtualTextNode {
+  return isPostact(PostactIdentifier.VirtualTextNode, item);
+}
+
+/**
+ * (helper) Create a virtual text node.
+ */
+export function createVtn(
+  data: string,
+  subscribable?: Subscribable<any>,
+): VirtualTextNode {
+  return {
+    __p: PostactIdentifier.VirtualTextNode,
+    data,
+    subscribable,
+  };
+}
+
 export type VirtualItem =
-  | null
-  | undefined
-  | string
   | VirtualTextNode
   | VirtualElement
-  | VirtualFragment;
+  | VirtualFragment
+  | null;
