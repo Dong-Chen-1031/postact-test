@@ -11,6 +11,8 @@ function getName(key: string): string {
     } else {
       text += char;
     }
+
+    idx += 1;
   }
 
   if (text.startsWith("webkit")) {
