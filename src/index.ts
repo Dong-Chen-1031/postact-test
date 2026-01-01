@@ -1,5 +1,6 @@
-export { select, ensureWindow, unescape, css } from "./utilities";
+export { select, ensureWindow, unescape } from "./utilities";
 
+// subscribables
 export {
   state,
   type Checker,
@@ -7,15 +8,18 @@ export {
   type UpdateDispatch,
 } from "./state";
 export { dependent } from "./dependent";
+export { later } from "./later";
 export type { Subscriber, Subscribable } from "./subscribable";
 
 export { html } from "./html";
-export { later } from "./later";
+
+// routes support
 export { route } from "./routes";
 
+// vdom -> document dom
 export type {
   VirtualElement,
   VirtualItem,
   VirtualTextNode,
 } from "./vdom/structure";
-export { virtualItemsToFragment as virtualItemToFragment } from "./vdom/client";
+export { realize, type ToFragOptions } from "./vdom/client";

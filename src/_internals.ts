@@ -53,6 +53,7 @@ export enum PostactIdentifier {
   VirtualElement = 2,
   VirtualFragment = 3,
   VirtualTextNode = 4,
+  CSSPaper = 5,
 }
 
 /**
