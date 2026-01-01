@@ -1,4 +1,4 @@
-export { select, ensureWindow, unescape } from "./utilities";
+export { select, ensureWindow, unescape, css } from "./utilities";
 
 export {
   state,

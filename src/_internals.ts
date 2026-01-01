@@ -19,9 +19,18 @@ export class Maybe<T> {
     return !this.#hasValue;
   }
 
+  isSome(): boolean {
+    return this.#hasValue;
+  }
+
   replace(value: T) {
     this.#hasValue = true;
     this.#value = value;
+  }
+
+  replaceNone() {
+    this.#hasValue = false;
+    this.#value = null;
   }
 
   static none<T>(): Maybe<T> {
@@ -63,4 +72,14 @@ export function isPostact<K extends PostactIdentifier>(
   )
     return true;
   return false;
+}
+
+/**
+ * Create a non-safe, simple random string.
+ * @param len The length of the string.
+ */
+export function simpleRandString(len: number = 6): string {
+  return Array.from({ length: len }, () =>
+    Math.floor(Math.random() * 16).toString(16),
+  ).join("");
 }
