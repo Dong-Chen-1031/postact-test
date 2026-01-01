@@ -161,7 +161,7 @@ class FragmentSpread {
 
 export interface ToFragOptions {
   /**
-   * Whether to enable debug mode.
+   * Whether to enable debug mode. *(default: `false`)*
    * When debug mode is enabled, comments will appear in the following format,
    * wrapping fragments:
    * ```html
@@ -176,10 +176,15 @@ export interface ToFragOptions {
 const DEFAULT_TOFRAG_OPTIONS = { debug: false };
 
 /**
- * Converts a virtual DOM to a document fragment for rendering it on the web.
- * @param vi
+ * Converts a virtual DOM to a {@link DocumentFragment} for rendering it on the web.
+ * To put it short, this process is called "realization," and as the name suggests, it
+ * realizes a virtual DOM.
+ * This can only be used when the `window` context is present.
+ *
+ * @param vi The virtual item.
+ * @param options Additional options. For more, see {@link ToFragOptions}.
  */
-export function virtualItemsToFragment(
+export function realize(
   vi: VirtualItem,
   options: ToFragOptions = DEFAULT_TOFRAG_OPTIONS,
 ): DocumentFragment {
