@@ -35,50 +35,6 @@ export class Dependent<T, R> implements Subscribable<R> {
   }
 }
 
-interface DependentEntry {
-  /**
-   * Creates a subscribable `DependentLater` object that runs an asynchronous `gen` whenever the `state` updates.
-   * @param state The state to depend upon.
-   * @param gen An asynchronous function taking a state, then returns a value.
-   *
-   * @example
-   * ```ts
-   * const $count = state<number>(0);
-   * const $calculated = dependent.later<string>($count, async (count) => {
-   *   return (count * 67).toString() // performs some computation
-   * })
-   *
-   * if ($calculated.ok) {
-   *   console.log($calculated.value);
-   * }
-   * ```
-   */
-  later: <R, T>(
-    state: State<T>,
-    gen: (value: T) => Promise<R>,
-  ) => DependentLater<T, R>;
-}
-
-/**
- * Creates a subscribable `Dependent` object that runs `gen` whenever the `state` updates.
- * @param state The state to depend upon.
- * @param gen A function taking a state, then returns a value.
- *
- * @example
- * ```ts
- * const $count = state<number>(0);
- * const $calculated = dependent<string>($count, (count) => {
- *   return (count * 67).toString() // performs some computation
- * })
- * ```
- */
-function _dependent<R, T>(
-  state: State<T>,
-  gen: (value: T) => R,
-): Dependent<T, R> {
-  return new Dependent(state, gen);
-}
-
 export class DependentLater<T, R> implements Subscribable<R> {
   public __p: PostactIdentifier.Dependent = PostactIdentifier.Dependent;
 
@@ -132,16 +88,54 @@ export class DependentLater<T, R> implements Subscribable<R> {
   }
 }
 
-_dependent.later = function <R, T>(
+/**
+ * Creates a subscribable `Dependent` object that runs `gen` whenever the `state` updates.
+ * @param state The state to depend upon.
+ * @param gen A function taking a state, then returns a value.
+ *
+ * @example
+ * ```ts
+ * const $count = state<number>(0);
+ * const $calculated = dependent<string>($count, (count) => {
+ *   return (count * 67).toString() // performs some computation
+ * })
+ * ```
+ */
+export function dependent<R, T>(
+  state: State<T>,
+  gen: (value: T) => R,
+): Dependent<T, R> {
+  return new Dependent(state, gen);
+}
+
+/**
+ * Creates a subscribable `DependentLater` object that runs an asynchronous `gen` whenever the `state` updates.
+ * @param state The state to depend upon.
+ * @param gen An asynchronous function taking a state, then returns a value.
+ *
+ * @example
+ * ```ts
+ * const $count = state<number>(0);
+ * const $calculated = dependent.later<string>($count, async (count) => {
+ *   return (count * 67).toString() // performs some computation
+ * })
+ *
+ * if ($calculated.ok) {
+ *   console.log($calculated.value);
+ * }
+ * ```
+ */
+dependent.later = function <R, T>(
   state: State<T>,
   gen: (value: T) => Promise<R>,
 ): DependentLater<T, R> {
   return new DependentLater(state, gen);
 };
 
-export const dependent = _dependent as DependentEntry &
-  (<R, T>(state: State<T>, gen: (value: T) => R) => Dependent<T, R>);
-
 export function isDependent(item: any): item is Dependent<any, any> {
   return isPostact(PostactIdentifier.Dependent, item);
+}
+
+export function isDependentLater(item: any): item is DependentLater<any, any> {
+  return item instanceof DependentLater;
 }
