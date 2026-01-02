@@ -10,9 +10,9 @@ import {
 import { ensureWindow, isPrimitive } from "../utilities";
 import { transformArgToVirtualItem } from "../html";
 
-import { PostactIdentifier } from "../_internals";
+import { Maybe, PostactIdentifier, simpleRandString } from "../_internals";
 
-function _toFrag(vi: VirtualItem): DocumentFragment {
+function _toFrag(vi: VirtualItem, options: ToFragOptions): DocumentFragment {
   const fragment = window.document.createDocumentFragment();
   if (vi === null || typeof vi === "undefined") return fragment;
 
@@ -21,13 +21,36 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
     return fragment;
   }
 
-  // a text node
-
   if (isVtn(vi)) {
-    // VirtualTextNode
+    // text node (VirtualTextNode)
     const vtn = vi as VirtualTextNode;
     const tn = window.document.createTextNode(vtn.data);
-    fragment.appendChild(tn);
+
+    // it's only needed if subscribables are present
+    // otherwise it's a waste of resource
+    if (vtn.subscribable) {
+      const id = options.debug ? simpleRandString() : "";
+
+      const start = window.document.createComment(options.debug ? `${id}` : "");
+      const end = window.document.createComment(options.debug ? `/${id}` : "");
+
+      const fs = new FragmentSpread(start, end, fragment); // as of now, the parent is the container
+
+      vtn.subscribable.subscribe((value) => {
+        if (tn.parentNode) {
+          // if the text node has been added to the DOM, parentNode would be present
+          fs.setParent(tn.parentNode);
+        }
+        const newFrag = resolveSubscribableValueToFrag(value, options);
+        fs.spreadAndReplace(newFrag);
+      });
+
+      fragment.append(start, tn, end);
+    } else {
+      // no subscribables
+      fragment.appendChild(tn);
+    }
+
     return fragment;
   }
 
@@ -45,8 +68,15 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
       element.addEventListener(name, listener),
     );
 
+    // subscribables
+    if (vi.subscribable)
+      vi.subscribable.subscribe((value) => {
+        const newFrag = resolveSubscribableValueToFrag(value, options);
+        element.replaceChildren(newFrag);
+      });
+
     // inner children
-    element.append(...vi.children.map((child) => _toFrag(child)));
+    element.append(...vi.children.map((child) => _toFrag(child, options)));
 
     fragment.appendChild(element);
     return fragment;
@@ -54,23 +84,110 @@ function _toFrag(vi: VirtualItem): DocumentFragment {
 
   if (isVf(vi)) {
     // we're left with VirtualFragment
+    const toInsert = vi.children.reduce((frag, vi) => {
+      frag.append(_toFrag(vi, options));
+      return frag;
+    }, window.document.createDocumentFragment());
 
-    fragment.append(
-      ...(vi as VirtualFragment).children.map((vi) => {
-        return _toFrag(vi);
-      }),
-    );
+    // again, it's only needed if there are subscribables
+    if (vi.subscribable) {
+      const id = options.debug ? simpleRandString() : "";
+
+      const start = window.document.createComment(options.debug ? `${id}` : "");
+      const end = window.document.createComment(options.debug ? `/${id}` : "");
+      const fs = new FragmentSpread(start, end, fragment);
+
+      vi.subscribable.subscribe((value) => {
+        if (start.parentNode) {
+          fs.setParent(start.parentNode);
+        }
+
+        const newFrag = resolveSubscribableValueToFrag(value, options);
+        fs.spreadAndReplace(newFrag);
+      });
+
+      fragment.append(start, toInsert, end);
+    } else {
+      fragment.appendChild(toInsert);
+    }
     return fragment;
   } else {
     throw new Error("unknown virtual item", vi);
   }
 }
 
+function resolveSubscribableValueToFrag(
+  value: any,
+  options: ToFragOptions,
+): DocumentFragment {
+  if (typeof value === "undefined" || value === null) {
+    return window.document.createDocumentFragment();
+  } else if (isPrimitive(value)) {
+    const frag = window.document.createDocumentFragment();
+    frag.appendChild(window.document.createTextNode(value.toString()));
+    return frag;
+  } else {
+    return _toFrag(value, options);
+  }
+}
+
+class FragmentSpread {
+  #start: Node;
+  #end: Node;
+  #parent: Node;
+
+  constructor(start: Node, end: Node, parent: Node) {
+    this.#start = start;
+    this.#end = end;
+    this.#parent = parent;
+  }
+
+  setParent(parent: Node) {
+    this.#parent = parent;
+  }
+
+  spreadAndReplace(items: DocumentFragment) {
+    let current = this.#start.nextSibling;
+
+    while (current && !this.#end.isEqualNode(current)) {
+      const next = current.nextSibling; // cache first
+      this.#parent.removeChild(current);
+      current = next;
+    }
+
+    this.#parent.insertBefore(items, this.#end);
+  }
+}
+
+export interface ToFragOptions {
+  /**
+   * Whether to enable debug mode. *(default: `false`)*
+   * When debug mode is enabled, comments will appear in the following format,
+   * wrapping fragments:
+   * ```html
+   * <!--xxxxxx-->
+   * <!--/xxxxxx-->
+   * ```
+   * When disabled, all identifiers are wiped out.
+   */
+  debug?: boolean;
+}
+
+const DEFAULT_TOFRAG_OPTIONS = { debug: false };
+
 /**
- * Converts a virtual DOM to a document fragment for rendering it on the web.
- * @param vi
+ * Converts a virtual DOM to a {@link DocumentFragment} for rendering it on the web.
+ * To put it short, this process is called "realization," and as the name suggests, it
+ * realizes a virtual DOM.
+ * This can only be used when the `window` context is present.
+ *
+ * @param vi The virtual item.
+ * @param options Additional options. For more, see {@link ToFragOptions}.
  */
-export function virtualItemsToFragment(vi: VirtualItem): DocumentFragment {
+export function realize(
+  vi: VirtualItem,
+  options: ToFragOptions = DEFAULT_TOFRAG_OPTIONS,
+): DocumentFragment {
   ensureWindow();
-  return _toFrag(vi);
+  return _toFrag(vi, options);
 }
